@@ -1,0 +1,645 @@
+
+@import "tailwindcss";
+
+/* =========================================
+   GLOBAL STYLES
+========================================= */
+
+:root {
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  color: #0f172a;
+  background: #f8fafc;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+img {
+  max-width: 100%;
+}
+
+/* =========================================
+   A4 PRINT PREVIEW
+========================================= */
+
+.print-pages {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.a4-page {
+  box-sizing: border-box;
+  width: 210mm;
+  height: 297mm;
+  padding: 12mm;
+  background: white;
+
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: repeat(3, 55mm);
+  gap: 8mm 6mm;
+  align-content: start;
+
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+}
+
+.a4-image-cell {
+  position: relative;
+  width: 100%;
+  height: 55mm;
+  border: 2px solid black;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.a4-image-cell img {
+  display: block;
+  width: 100%;
+  height: 55mm;
+  object-fit: fill;
+}
+
+.remove-image-button {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  z-index: 2;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 50%;
+
+  background: #dc2626;
+  color: white;
+  font-size: 24px;
+  line-height: 1;
+
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.25);
+}
+
+.remove-image-button:hover {
+  background: #b91c1c;
+}
+
+/* =========================================
+   IMAGE TO PDF — MAIN LAYOUT
+========================================= */
+
+.pdf-tool {
+  min-height: calc(100vh - 130px);
+  padding: 24px;
+  background: #f1f3f9;
+}
+
+.pdf-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(300px, 3fr);
+  align-items: stretch;
+  gap: 20px;
+
+  width: 100%;
+  max-width: 1600px;
+  min-height: calc(100vh - 180px);
+  margin: 0 auto;
+}
+
+/* Left side: 70% image preview */
+
+.pdf-preview-panel {
+  min-width: 0;
+  padding: 24px;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  background: #f8fafc;
+}
+
+.pdf-panel-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.pdf-panel-heading h1 {
+  margin: 0;
+  color: #0f172a;
+  font-size: clamp(22px, 2vw, 30px);
+  font-weight: 750;
+}
+
+.pdf-panel-heading p {
+  margin: 6px 0 0;
+  color: #64748b;
+  font-size: 14px;
+}
+
+/* Add images button */
+
+.pdf-add-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 1px solid #0284c7;
+  border-radius: 10px;
+
+  background: #0284c7;
+  color: white;
+  font-weight: 650;
+  transition: background 0.2s ease;
+}
+
+.pdf-add-button:hover {
+  background: #0369a1;
+}
+
+/* Empty upload area */
+
+.pdf-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+
+  width: 100%;
+  min-height: 350px;
+  padding: 32px;
+  border: 2px dashed #cbd5e1;
+  border-radius: 14px;
+
+  background: white;
+  color: #334155;
+  text-align: center;
+}
+
+.pdf-empty-state:hover {
+  border-color: #0284c7;
+  background: #f0f9ff;
+}
+
+.pdf-empty-state > span:last-child {
+  color: #64748b;
+  font-size: 14px;
+}
+
+.pdf-upload-icon {
+  display: grid;
+  place-items: center;
+
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+
+  background: #e0f2fe;
+  color: #0284c7;
+  font-size: 36px;
+}
+
+/* Selected image grid */
+
+.pdf-image-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: start;
+  gap: 18px;
+}
+
+.pdf-image-card {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: white;
+  box-shadow: 0 2px 8px rgb(15 23 42 / 5%);
+}
+
+.pdf-image-number {
+  margin-bottom: 10px;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.pdf-image-frame {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 100%;
+  height: 230px;
+  padding: 8px;
+  border-radius: 8px;
+  background: #f1f5f9;
+  overflow: hidden;
+}
+
+.pdf-image-frame img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.pdf-image-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.pdf-image-actions button {
+  min-height: 34px;
+  padding: 6px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+  background: white;
+  color: #334155;
+  font-size: 13px;
+}
+
+.pdf-image-actions button:hover:not(:disabled) {
+  background: #f1f5f9;
+}
+
+.pdf-image-actions .pdf-remove-button {
+  margin-left: auto;
+  border-color: #fecaca;
+  color: #dc2626;
+}
+
+.pdf-image-actions .pdf-remove-button:hover {
+  background: #fef2f2;
+}
+
+/* Right side: 30% PDF options */
+
+.pdf-options-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+
+  min-width: 0;
+  padding: 24px;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  background: white;
+  box-shadow: 0 2px 10px rgb(15 23 42 / 4%);
+}
+
+.pdf-options-panel h2 {
+  margin: 0;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e2e8f0;
+  color: #1e293b;
+  font-size: 24px;
+  font-weight: 750;
+}
+
+.pdf-option-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pdf-option-group > label {
+  color: #334155;
+  font-size: 15px;
+  font-weight: 650;
+}
+
+.pdf-option-group select {
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+  outline: none;
+  background: white;
+  color: #334155;
+}
+
+.pdf-option-group select:focus {
+  border-color: #0284c7;
+  box-shadow: 0 0 0 3px rgb(2 132 199 / 12%);
+}
+
+/* Orientation options */
+
+.pdf-orientation-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.pdf-orientation-options button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+
+  min-height: 112px;
+  padding: 12px 6px;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+
+  background: #f8fafc;
+  color: #64748b;
+  transition: all 0.2s ease;
+}
+
+.pdf-orientation-options button.selected {
+  border-color: #0284c7;
+  background: #f0f9ff;
+  color: #0284c7;
+}
+
+.orientation-icon {
+  display: block;
+  border: 3px solid currentColor;
+  border-radius: 3px;
+}
+
+.portrait-icon {
+  width: 24px;
+  height: 34px;
+}
+
+.landscape-icon {
+  width: 38px;
+  height: 25px;
+}
+
+/* Margin options */
+
+.pdf-margin-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.pdf-margin-options button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+
+  min-width: 0;
+  min-height: 95px;
+  padding: 10px 4px;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.pdf-margin-options button.selected {
+  border-color: #0284c7;
+  background: #f0f9ff;
+  color: #0284c7;
+}
+
+.margin-icon {
+  display: grid;
+  place-items: center;
+
+  width: 34px;
+  height: 34px;
+  border: 1px dashed currentColor;
+  background: white;
+}
+
+.margin-icon span {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 1px solid currentColor;
+}
+
+.margin-small span {
+  width: 72%;
+  height: 72%;
+}
+
+.margin-big span {
+  width: 48%;
+  height: 48%;
+}
+
+/* Convert button */
+
+.pdf-settings-note {
+  margin: 0;
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.pdf-error {
+  margin: 0;
+  padding: 12px;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: 13px;
+}
+
+.pdf-convert-button {
+  width: 100%;
+  min-height: 60px;
+  margin-top: auto;
+  padding: 14px;
+  border: none;
+  border-radius: 12px;
+
+  background: #0284c7;
+  color: white;
+  font-size: 18px;
+  font-weight: 750;
+
+  box-shadow: 0 4px 10px rgb(2 132 199 / 20%);
+  transition: background 0.2s ease;
+}
+
+.pdf-convert-button:hover:not(:disabled) {
+  background: #0369a1;
+}
+
+.pdf-convert-button:disabled {
+  background: #94a3b8;
+  box-shadow: none;
+}
+
+/* =========================================
+   RESPONSIVE LAYOUT
+========================================= */
+
+@media (max-width: 900px) {
+  .pdf-tool {
+    padding: 16px;
+  }
+
+  .pdf-workspace {
+    grid-template-columns: minmax(0, 1fr);
+    min-height: auto;
+  }
+
+  .pdf-options-panel {
+    gap: 20px;
+  }
+
+  .pdf-preview-panel,
+  .pdf-options-panel {
+    padding: 18px;
+  }
+
+  .pdf-image-frame {
+    height: 260px;
+  }
+}
+
+@media (max-width: 520px) {
+  .pdf-tool {
+    padding: 10px;
+  }
+
+  .pdf-preview-panel,
+  .pdf-options-panel {
+    padding: 14px;
+    border-radius: 12px;
+  }
+
+  .pdf-panel-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .pdf-add-button {
+    width: 100%;
+  }
+
+  .pdf-image-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .pdf-image-frame {
+    height: 300px;
+  }
+
+  .pdf-options-panel h2 {
+    font-size: 21px;
+  }
+
+  .pdf-orientation-options button {
+    min-height: 95px;
+  }
+
+  .pdf-convert-button {
+    min-height: 54px;
+    font-size: 16px;
+  }
+}
+
+/* =========================================
+   A4 PRINT SETTINGS
+========================================= */
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+
+  html,
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+  }
+
+  body * {
+    visibility: hidden;
+  }
+
+  .print-pages,
+  .print-pages * {
+    visibility: visible;
+  }
+
+  .print-pages {
+    display: block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    gap: 0 !important;
+  }
+
+  .a4-page {
+    width: 210mm !important;
+    height: 297mm !important;
+    margin: 0 !important;
+    padding: 12mm !important;
+    box-shadow: none !important;
+    overflow: hidden !important;
+
+    break-after: page;
+    page-break-after: always;
+  }
+
+  .a4-page:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+
+  .a4-image-cell img {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}
