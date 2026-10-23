@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from "react";
 
 const OUTPUT_WIDTH = 1004;
@@ -42,6 +41,44 @@ function ImageEditor({
     return () => URL.revokeObjectURL(url);
   }, [file]);
 
+  // Rotate the actual image so cropping uses the rotated pixels.
+  function handleRotate(degrees) {
+    const image = imageRef.current;
+
+    if (!image || !image.naturalWidth || !image.naturalHeight || isCropping) {
+      return;
+    }
+
+    const sourceWidth = image.naturalWidth;
+    const sourceHeight = image.naturalHeight;
+    const radians = (degrees * Math.PI) / 180;
+
+    const rotatedCanvas = document.createElement("canvas");
+
+    if (degrees === 90 || degrees === 270) {
+      rotatedCanvas.width = sourceHeight;
+      rotatedCanvas.height = sourceWidth;
+    } else {
+      rotatedCanvas.width = sourceWidth;
+      rotatedCanvas.height = sourceHeight;
+    }
+
+    const context = rotatedCanvas.getContext("2d");
+
+    if (!context) {
+      setError("Could not rotate this image.");
+      return;
+    }
+
+    context.translate(rotatedCanvas.width / 2, rotatedCanvas.height / 2);
+    context.rotate(radians);
+    context.drawImage(image, -sourceWidth / 2, -sourceHeight / 2);
+
+    setError("");
+    setPoints(null);
+    setImageUrl(rotatedCanvas.toDataURL("image/jpeg", 0.95));
+  }
+
   // Initialize exactly four crop corners when the image loads.
   function handleImageLoad(event) {
     const image = event.currentTarget;
@@ -73,16 +110,14 @@ function ImageEditor({
         0,
         Math.min(
           image.naturalWidth,
-          ((event.clientX - rect.left) / rect.width) *
-            image.naturalWidth,
+          ((event.clientX - rect.left) / rect.width) * image.naturalWidth,
         ),
       ),
       y: Math.max(
         0,
         Math.min(
           image.naturalHeight,
-          ((event.clientY - rect.top) / rect.height) *
-            image.naturalHeight,
+          ((event.clientY - rect.top) / rect.height) * image.naturalHeight,
         ),
       ),
     };
@@ -120,10 +155,7 @@ function ImageEditor({
   }
 
   function stopDrag(event) {
-    if (
-      dragRef.current &&
-      event.pointerId === dragRef.current.pointerId
-    ) {
+    if (dragRef.current && event.pointerId === dragRef.current.pointerId) {
       dragRef.current = null;
     }
   }
@@ -131,19 +163,13 @@ function ImageEditor({
   // Solve a system of eight equations for perspective correction.
   function solveLinearSystem(matrix, values) {
     const size = values.length;
-    const rows = matrix.map((row, index) => [
-      ...row,
-      values[index],
-    ]);
+    const rows = matrix.map((row, index) => [...row, values[index]]);
 
     for (let col = 0; col < size; col++) {
       let pivot = col;
 
       for (let row = col + 1; row < size; row++) {
-        if (
-          Math.abs(rows[row][col]) >
-          Math.abs(rows[pivot][col])
-        ) {
+        if (Math.abs(rows[row][col]) > Math.abs(rows[pivot][col])) {
           pivot = row;
         }
       }
@@ -221,28 +247,22 @@ function ImageEditor({
       const [topLeft, topRight, bottomRight, bottomLeft] = points;
 
       // Check that the selected crop area is large enough.
-      const polygonArea = Math.abs(
-        points.reduce((sum, point, index) => {
-          const next = points[(index + 1) % points.length];
+      const polygonArea =
+        Math.abs(
+          points.reduce((sum, point, index) => {
+            const next = points[(index + 1) % points.length];
 
-          return (
-            sum +
-            point.x * next.y -
-            next.x * point.y
-          );
-        }, 0),
-      ) / 2;
+            return sum + point.x * next.y - next.x * point.y;
+          }, 0),
+        ) / 2;
 
       if (polygonArea < 100) {
-        throw new Error(
-          "The crop area is too small. Move the corner points.",
-        );
+        throw new Error("The crop area is too small. Move the corner points.");
       }
 
       // Reject crossed or incorrectly ordered corners.
       const cross = (a, b, c) =>
-        (b.x - a.x) * (c.y - b.y) -
-        (b.y - a.y) * (c.x - b.x);
+        (b.x - a.x) * (c.y - b.y) - (b.y - a.y) * (c.x - b.x);
 
       const turns = [
         cross(topLeft, topRight, bottomRight),
@@ -338,10 +358,8 @@ function ImageEditor({
 
           const sx = Math.floor(sourceX);
           const sy = Math.floor(sourceY);
-          const sourceIndex =
-            (sy * sourceCanvas.width + sx) * 4;
-          const outputIndex =
-            (y * OUTPUT_WIDTH + x) * 4;
+          const sourceIndex = (sy * sourceCanvas.width + sx) * 4;
+          const outputIndex = (y * OUTPUT_WIDTH + x) * 4;
 
           outputPixels.data[outputIndex] = adjust(
             sourcePixels.data[sourceIndex],
@@ -410,13 +428,44 @@ function ImageEditor({
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-10">
         <section className="min-w-0 rounded-2xl border border-slate-200 bg-white p-3 sm:p-5 lg:col-span-7">
-          <h2 className="mb-2 font-semibold text-slate-800">
-            Four-Point Crop
-          </h2>
+          <h2 className="mb-2 font-semibold text-slate-800">Four-Point Crop</h2>
 
           <p className="mb-4 text-sm text-slate-500">
             Drag the four blue corners to match the image angle.
           </p>
+
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <span className="mr-1 text-sm font-medium text-slate-700">
+              Rotate Image:
+            </span>
+
+            <button
+              type="button"
+              onClick={() => handleRotate(270)}
+              disabled={isCropping}
+              className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-50"
+            >
+              ↶ Left 90°
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleRotate(180)}
+              disabled={isCropping}
+              className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-50"
+            >
+              180°
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleRotate(90)}
+              disabled={isCropping}
+              className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-50"
+            >
+              ↻ Right 90°
+            </button>
+          </div>
 
           <div className="overflow-auto rounded-xl bg-slate-900 p-3">
             <div className="relative mx-auto w-fit max-w-full">
@@ -483,9 +532,7 @@ function ImageEditor({
         </section>
 
         <aside className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 lg:col-span-3">
-          <h2 className="mb-5 font-semibold text-slate-800">
-            Image Settings
-          </h2>
+          <h2 className="mb-5 font-semibold text-slate-800">Image Settings</h2>
 
           <label className="mb-2 block text-sm font-medium text-slate-700">
             Brightness: {brightness}%
@@ -497,9 +544,7 @@ function ImageEditor({
             max="200"
             value={brightness}
             disabled={isCropping}
-            onChange={(event) =>
-              setBrightness(Number(event.target.value))
-            }
+            onChange={(event) => setBrightness(Number(event.target.value))}
             className="mb-5 w-full accent-sky-600"
           />
 
@@ -513,9 +558,7 @@ function ImageEditor({
             max="200"
             value={contrast}
             disabled={isCropping}
-            onChange={(event) =>
-              setContrast(Number(event.target.value))
-            }
+            onChange={(event) => setContrast(Number(event.target.value))}
             className="mb-6 w-full accent-sky-600"
           />
 
@@ -523,9 +566,7 @@ function ImageEditor({
             <p className="text-sm font-semibold text-slate-800">
               Fixed Output Size
             </p>
-            <p className="mt-1 text-sm text-slate-500">
-              8.5 cm × 5.5 cm
-            </p>
+            <p className="mt-1 text-sm text-slate-500">8.5 cm × 5.5 cm</p>
             <p className="mt-1 text-xs text-slate-500">
               1004 × 650 pixels · intended for 300 DPI printing
             </p>
@@ -554,4 +595,4 @@ function ImageEditor({
   );
 }
 
-export default ImageEditor
+export default ImageEditor;

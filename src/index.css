@@ -643,3 +643,9 @@ img {
     -webkit-print-color-adjust: exact;
   }
 }
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}

@@ -106,7 +106,7 @@ function A4PrintSheet({
                       title="Remove this image"
                       aria-label={`Remove image ${imageIndex + 1}`}
                       onClick={() => onRemoveImage(imageIndex)}
-                      className="remove-image-button print:hidden"
+                      className="no-print remove-image-button print:hidden"
                     >
                       ×
                     </button>
